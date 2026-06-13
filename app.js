@@ -43,11 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginPinInputs = document.querySelectorAll('#loginPinInputs .pin-input');
     const loginError = document.getElementById('loginError');
 
-    // Interstitial Ad DOM Elements
-    const interstitialAd = document.getElementById('interstitial-ad');
-    const adCountdown = document.getElementById('ad-countdown');
-    const btnSkipAd = document.getElementById('btn-skip-ad');
-
     let loadingInterval = null;
     let selectedFile = null;
 
@@ -106,8 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-focus move for PIN input fields
     function setupPinAutofocus(inputs) {
         inputs.forEach((input, index) => {
-            input.addEventListener('input', (e) => {
-                // Keep only digits
+            input.addEventListener('input', () => {
                 input.value = input.value.replace(/\D/g, '');
                 if (input.value && index < inputs.length - 1) {
                     inputs[index + 1].focus();
@@ -215,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (decrypted) {
             updateVaultStatusUI();
             closeLoginModal();
-            // If there's an active upload pending, run it
             if (selectedFile) {
                 uploadAndAnalyze(selectedFile);
             }
@@ -225,8 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loginPinInputs[0].focus();
         }
     });
-
-    // Interstitial Ad Flow removed to comply with zero-gating AdSense rules
 
     // ==========================================
     // 3. FILE SELECTION & UPLOAD HANDLERS
@@ -303,12 +294,10 @@ document.addEventListener('DOMContentLoaded', () => {
             uploadContent.classList.add('hidden');
             previewContainer.classList.remove('hidden');
 
-            // Enforce vault unlock before running the analysis
             if (!Vault.isUnlocked()) {
                 if (Vault.hasStoredKey()) {
                     openLoginModal();
                 } else {
-                    // Force setup key modal
                     btnOpenSetup.click();
                     showError("API Key required. Enter your key in the vault modal first.");
                 }
@@ -354,16 +343,16 @@ document.addEventListener('DOMContentLoaded', () => {
         errorBanner.classList.add('hidden');
     }
 
+    // ==========================================
+    // 4. API CALL & CLIENT FALLBACK ENGINE
+    // ==========================================
     async function uploadAndAnalyze(file) {
         startLoadingAnimation();
         
         const formData = new FormData();
         formData.append('file', file);
-
-        // Fetch decrypted key from vault
         const apiKey = Vault.getUnlockedKey() || '';
 
-        // Dynamically determine API URL based on protocol/port or GitHub Pages hosting
         const isGitHubPages = window.location.hostname.endsWith('github.io');
         const isLocalFile = window.location.protocol === 'file:';
         const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -373,6 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
             : '';
 
         try {
+            // Try hitting local FastAPI backend
             const response = await fetch(`${apiBase}/api/analyze-bet`, {
                 method: 'POST',
                 headers: {
@@ -384,21 +374,330 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) {
                 const errorData = await response.json();
                 if (response.status === 422) {
-                    throw new Error(errorData.detail || "No valid soccer bet slip detected in the image. Please upload a clearer capture.");
+                    throw new Error(errorData.detail || "Validation failed on the backend.");
                 }
-                throw new Error(errorData.detail || "Server error while processing your bet slip.");
+                throw new Error(errorData.detail || "Server error.");
             }
 
             const data = await response.json();
             renderResults(data);
 
         } catch (error) {
-            showError(error.message);
+            console.warn("[Backend Offline/Blocked] Falling back to direct browser Gemini call...", error);
+            try {
+                // If local server fails, execute the analysis 100% serverless in the browser
+                const slipData = await callGeminiDirectly(file, apiKey);
+                const auditResult = auditBetClientSide(slipData);
+                renderResults(auditResult);
+            } catch (fallbackError) {
+                showError(fallbackError.message || "Failed to process the bet slip. Please check your API key.");
+            }
         } finally {
             stopLoadingAnimation();
         }
     }
 
+    // 100% Serverless Gemini API Vision Call
+    async function callGeminiDirectly(file, apiKey) {
+        const base64Data = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(file);
+        });
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const prompt = `You are a sports betting risk manager. Analyze this soccer bet slip image and extract the breakdown into the following strict JSON format. RESPOND ENTIRELY IN ENGLISH, translating any team names, competitions, and markets to English if necessary.
+JSON structure: {"cuota_total": float, "stake_euros": float or null, "num_eventos": int, "selecciones": [{"evento": str, "mercado": str, "cuota": float, "competicion": str}]}.
+Only return valid JSON matching the schema.`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        {
+                            inlineData: {
+                                mimeType: file.type,
+                                data: base64Data
+                            }
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error?.message || "Failed to communicate with Gemini API. Verify your API Key.");
+        }
+
+        const resData = await response.json();
+        const text = resData.candidates[0].content.parts[0].text;
+        
+        // Return parsed JSON data
+        return JSON.parse(text.trim());
+    }
+
+    // JS Implementation of the 20 audit rules from logic_engine.py
+    function auditBetClientSide(bet) {
+        const red_flags = [];
+        const green_flags = [];
+        const lang = Lang.get();
+
+        const cuota_total = parseFloat(bet.cuota_total);
+        if (isNaN(cuota_total) || cuota_total <= 1.0) {
+            throw new Error("Invalid bet slip data: Total odds must be greater than 1.0.");
+        }
+
+        const stake_euros = bet.stake_euros !== null ? parseFloat(bet.stake_euros) : null;
+        const num_eventos = parseInt(bet.num_eventos) || 0;
+        const selecciones = bet.selecciones || [];
+        const probabilidad_implicta = (1 / cuota_total) * 100;
+
+        const competiciones = selecciones.map(s => s.competicion.toLowerCase());
+        const unique_competitions = new Set(competiciones);
+        const eventos = selecciones.map(s => s.evento.toLowerCase());
+        const unique_events = new Set(eventos);
+
+        // --- RED FLAGS ---
+        // 1. Frankenstein Accumulator
+        if (num_eventos >= 4 && unique_competitions.size > 1) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Combinada Frankenstein" : "Frankenstein Accumulator",
+                mensaje: lang === 'es' ? `Tienes ${num_eventos} eventos de ${unique_competitions.size} competiciones distintas. Es una mezcla caótica que dispara la varianza.` : `You have ${num_eventos} events across ${unique_competitions.size} different competitions. This chaotic mix heavily increases variance.`
+            });
+        }
+
+        // 2. Correct Score Roulette
+        const has_marcador_exacto = selecciones.some(s => s.mercado.toLowerCase().includes("marcador exacto") || s.mercado.toLowerCase().includes("correct score"));
+        if (has_marcador_exacto) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Ruleta del Marcador Exacto" : "Correct Score Roulette",
+                mensaje: lang === 'es' ? "Los mercados de marcador exacto tienen un margen de la casa altísimo. Es casi imposible acertar a largo plazo." : "Correct score markets carry an extremely high house edge. It is mathematically unprofitable in the long run."
+            });
+        }
+
+        // 3. Away Team Trap
+        let has_visitante_trap = false;
+        for (let s of selecciones) {
+            const merc = s.mercado.toLowerCase();
+            if (["visitante", "away", "2", "gana 2"].some(term => merc.includes(term)) && !["handicap", "hándicap", "asiático", "asian", "12", "doble oportunidad"].some(term => merc.includes(term))) {
+                if (s.cuota >= 1.30 && s.cuota <= 1.50) {
+                    has_visitante_trap = true;
+                    break;
+                }
+            }
+        }
+        if (has_visitante_trap) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Trampa del Visitante" : "Away Team Trap",
+                mensaje: lang === 'es' ? "Cuota de visitante engañosa (1.30 - 1.50). Jugar fuera de casa con cuotas bajas ofrece muy poco valor para el riesgo que conlleva." : "Misleading away odds (1.30 - 1.50). Playing away from home with low odds offers very poor value relative to the risk."
+            });
+        }
+
+        // 4. Micro-Events
+        const micro_events_terms = ["tarjeta", "saque", "tiro", "córner", "corner", "amartilla", "falta", "offsides", "fuera de juego", "amarilla", "roja", "banda", "asistencia", "remates", "shots", "booking", "throw"];
+        const has_micro_events = selecciones.some(s => micro_events_terms.some(term => s.mercado.toLowerCase().includes(term)));
+        if (has_micro_events) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Micro-Eventos" : "Micro-Events Volatility",
+                mensaje: lang === 'es' ? "Los mercados de tarjetas, saques de banda o tiros son altamente volátiles y están influenciados por factores imposibles de predecir." : "Cards, throw-ins, and shot markets are highly volatile and heavily influenced by unpredictable variables."
+            });
+        }
+
+        // 5. Moonshot Effect
+        if (cuota_total > 100.0) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Efecto Moonshot" : "Moonshot Effect",
+                mensaje: lang === 'es' ? `Una cuota total de ${cuota_total.toFixed(2)} es una lotería. Estás buscando un milagro en lugar de una inversión con valor.` : `A total odd of ${cuota_total.toFixed(2)} is a lottery ticket. You are betting on a miracle rather than finding mathematical value.`
+            });
+        }
+
+        // 6. Bankroll Suicide
+        if (stake_euros !== null && stake_euros > 50.0 && cuota_total > 20.0) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Suicidio de Bankroll" : "Bankroll Suicide",
+                mensaje: lang === 'es' ? `Arriesgar ${stake_euros}€ a una cuota de ${cuota_total.toFixed(2)} es insostenible para cualquier gestión de banca saludable.` : `Risking ${stake_euros}€ on a ${cuota_total.toFixed(2)} odd is unsustainable for healthy bankroll management.`
+            });
+        }
+
+        // 7. Correlated Selections
+        if (unique_events.size < selecciones.length) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Falsa Correlación" : "Correlated Selections",
+                mensaje: lang === 'es' ? "Has combinado varias selecciones en el mismo partido. Las casas de apuestas reducen las cuotas correlacionadas para protegerse." : "You combined multiple selections on the same match. Bookmakers scale down correlated odds to protect their edge."
+            });
+        }
+
+        // 8. Chasing Losses
+        const current_day = new Date().getDay(); // Sunday is 0, Monday is 1, Friday is 5
+        if (num_eventos === 1 && (current_day === 1 || current_day === 5)) {
+            const day_name = current_day === 1 ? (lang === 'es' ? 'Lunes' : 'Monday') : (lang === 'es' ? 'Viernes' : 'Friday');
+            red_flags.push({
+                titulo: lang === 'es' ? "Apuesta a Remolque" : "Chasing Losses",
+                mensaje: lang === 'es' ? `Apuestas simples en ${day_name} suelen ser impulsivas por falta de partidos principales o para recuperar pérdidas del fin de semana.` : `Single bets placed on ${day_name}s are often impulsive due to lack of major fixtures or trying to recover weekend losses.`
+            });
+        }
+
+        // 9. Anytime Goalscorer Fallacy
+        let has_goleador_trap = false;
+        for (let s of selecciones) {
+            const merc = s.mercado.toLowerCase();
+            if (["goleador", "anota", "anytime", "marca"].some(term => merc.includes(term)) && !["marcador", "ambos", "mitad"].some(term => merc.includes(term))) {
+                if (s.cuota < 1.60) {
+                    has_goleador_trap = true;
+                    break;
+                }
+            }
+        }
+        if (has_goleador_trap) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Falacia de Cualquier Momento" : "Anytime Goalscorer Fallacy",
+                mensaje: lang === 'es' ? "Cuotas de goleador por debajo de 1.60 carecen de valor real. Las probabilidades de lesión, sustitución o sequía son demasiado altas." : "Anytime scorer odds below 1.60 offer no value. The probability of injury, early substitution, or cold streaks is too high."
+            });
+        }
+
+        // 10. Extreme Match Half Condition
+        const has_condiciones_extremas = selecciones.some(s => ["ambas mitades", "ganar ambas", "both halves"].some(term => s.mercado.toLowerCase().includes(term)));
+        if (has_condiciones_extremas) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Condiciones Extremas" : "Extreme Match Half Condition",
+                mensaje: lang === 'es' ? "Apostar a que un equipo gana ambas mitades requiere un dominio absoluto y constante. El riesgo supera por mucho la recompensa." : "Betting on a team to win both halves requires absolute dominance. The risk far outweighs the reward."
+            });
+        }
+
+        // --- GREEN FLAGS ---
+        // 1. Single Bet Purity
+        if (num_eventos === 1) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Pureza Simple" : "Single Bet Purity",
+                mensaje: lang === 'es' ? "Las apuestas individuales reducen la ventaja matemática de la casa de apuestas y permiten una gestión de riesgo profesional." : "Single bets minimize the bookmaker's mathematical edge and support a professional risk management approach."
+            });
+        }
+
+        // 2. Asian Handicap Safe Haven
+        const has_asiatico = selecciones.some(s => ["asiático", "asiatico", "asian"].some(term => s.mercado.toLowerCase().includes(term)));
+        if (has_asiatico) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Refugio Asiático" : "Asian Handicap Safe Haven",
+                mensaje: lang === 'es' ? "Los hándicaps y totales asiáticos devuelven parte o todo el dinero si empatas. Excelente control del riesgo." : "Asian handicaps and totals return part or all of your stake in case of specific draws. Outstanding risk control."
+            });
+        }
+
+        // 3. Optimal Value Zone
+        const has_zona_valor = selecciones.some(s => s.cuota >= 1.80 && s.cuota <= 2.20);
+        if (has_zona_valor) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Zona de Valor" : "Optimal Value Zone",
+                mensaje: lang === 'es' ? "Tienes selecciones con cuotas en el rango óptimo (1.80 - 2.20), donde suele encontrarse el verdadero valor matemático." : "Your bet slip includes selections in the optimal range (1.80 - 2.20), where mathematical value is most commonly found."
+            });
+        }
+
+        // 4. Competition Specialist
+        if (num_eventos > 1 && unique_competitions.size === 1) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Especialista" : "Competition Specialist",
+                mensaje: lang === 'es' ? `Combinar eventos de la misma competición (${Array.from(unique_competitions)[0].toUpperCase()}) demuestra foco y conocimiento especializado.` : `Combining events from the same competition (${Array.from(unique_competitions)[0].toUpperCase()}) shows focus and specialized league knowledge.`
+            });
+        }
+
+        // 5. Variance Mitigation
+        const has_reduccion_varianza = selecciones.some(s => ["dnb", "doble oportunidad", "empate no valida", "empate no válido", "draw no bet", "double chance"].some(term => s.mercado.toLowerCase().includes(term)));
+        if (has_reduccion_varianza) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Reducción de Varianza" : "Variance Mitigation",
+                mensaje: lang === 'es' ? "Uso de Doble Oportunidad o Empate No Válido (DNB). Coberturas inteligentes para amortiguar sorpresas de última hora." : "Utilizing Double Chance or Draw No Bet (DNB) are smart hedging strategies to buffer late upsets."
+            });
+        }
+
+        // 6. Surgical Double
+        if (num_eventos === 2 && cuota_total >= 2.0 && cuota_total <= 3.5 && selecciones.every(s => s.cuota >= 1.30)) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Combinada Quirúrgica" : "Surgical Double",
+                mensaje: lang === 'es' ? "Una combinada doble quirúrgica con buena cuota acumulada y sin selecciones basura de relleno." : "A surgical double accumulator with a strong combined price and no low-value fillers."
+            });
+        }
+
+        // 7. Fading the Crowd
+        let has_desafio_rebano = false;
+        for (let s of selecciones) {
+            const merc = s.mercado.toLowerCase();
+            if (["local", "home", "1", "gana 1"].some(term => merc.includes(term)) && !["visitante", "away", "x", "empate", "dnb", "doble oportunidad"].some(term => merc.includes(term))) {
+                if (s.cuota > 3.0) {
+                    has_desafio_rebano = true;
+                    break;
+                }
+            }
+        }
+        if (has_desafio_rebano) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Desafío al Rebaño" : "Fading the Crowd",
+                mensaje: lang === 'es' ? "Apostar al equipo local con cuota > 3.0 suele representar valor cuando el público sobreestima al equipo rival." : "Backing a home underdog at odds > 3.0 often represents value when the crowd overestimates the visiting side."
+            });
+        }
+
+        // 8. Professional Stake Management
+        if (stake_euros !== null && stake_euros < 5.0 && cuota_total > 15.0) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Stake Profesional" : "Professional Stake Management",
+                mensaje: lang === 'es' ? `Gestión correcta: Stake muy bajo (${stake_euros}€) para una cuota arriesgada (${cuota_total.toFixed(2)}).` : `Excellent discipline: keeping a very low stake (${stake_euros}€) for a high-risk price ({cuota_total.toFixed(2)}).`
+            });
+        }
+
+        // 9. Liquid Major Markets
+        const major_leagues = ["la liga", "laliga", "premier", "serie a", "bundesliga", "ligue 1", "champions", "europa league", "world cup", "eurocopa", "primera division"];
+        let has_mercados_liquidos = false;
+        for (let s of selecciones) {
+            const merc = s.mercado.toLowerCase();
+            const comp = s.competicion.toLowerCase();
+            const is_liquid_market = ["1x2", "resultado final", "ganador", "goles", "total de goles", "más de", "menos de", "over", "under", "ambos marcan"].some(term => merc.includes(term));
+            const is_major_league = major_leagues.some(league => comp.includes(league));
+            if (is_liquid_market && is_major_league) {
+                has_mercados_liquidos = true;
+                break;
+            }
+        }
+        if (has_mercados_liquidos) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Mercados Líquidos" : "Liquid Major Markets",
+                mensaje: lang === 'es' ? "Apuestas en mercados principales de ligas mayores. Límites altos de dinero y menor margen de comisión para la casa." : "Betting on primary markets of major leagues. High liquidity limits and lower bookmaker margin."
+            });
+        }
+
+        // 10. Loser's Shield
+        const has_escudo_perdedor = selecciones.some(s => ["+1.5", "+2.5", "+1.75", "+2.25", "+3.5", "+2.0", "+3.0"].some(term => s.mercado.toLowerCase().includes(term)));
+        if (has_escudo_perdedor) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Escudo del Perdedor" : "Loser's Shield",
+                mensaje: lang === 'es' ? "Uso de hándicap positivo amplio. Protege tu apuesta incluso si tu equipo pierde el encuentro por un margen corto." : "Using wide positive handicaps protects your bet even if your team loses the match by a tight margin."
+            });
+        }
+
+        // Score computation
+        let score = 50 + (green_flags.length * 10) - (red_flags.length * 15);
+        score = Math.max(0, Math.min(100, score));
+
+        return {
+            cuota_total: cuota_total,
+            stake_euros: stake_euros,
+            num_eventos: num_eventos,
+            probabilidad_implicta: probabilidad_implicta,
+            toxicity_score: score,
+            red_flags: red_flags,
+            green_flags: green_flags
+        };
+    }
+
+    // ==========================================
+    // 5. RESULTS RENDERING
+    // ==========================================
     function renderResults(data) {
         kpiCuota.textContent = data.cuota_total.toFixed(2);
         kpiProbabilidad.textContent = `${data.probabilidad_implicta.toFixed(1)}%`;
