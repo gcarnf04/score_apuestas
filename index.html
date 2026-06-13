@@ -14,6 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     
+    <script src="js/lang.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -36,10 +37,14 @@
                     <span class="logo-badge">Beta</span>
                 </div>
             </div>
-            <div class="header-right">
+            <div class="header-right" style="display:flex; align-items:center; gap:8px;">
+                <select class="lang-select btn btn-ghost btn-sm" style="background:var(--bg-2); border-color:var(--border-light); color:var(--text-1); font-size:12px; padding:4px 8px; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.1); cursor:pointer;">
+                    <option value="en">EN</option>
+                    <option value="es">ES</option>
+                </select>
                 <button class="btn btn-ghost btn-sm" id="btnOpenSetup">
                     <span class="status-dot" id="keyStatusDot"></span>
-                    <span id="keyStatusLabel">No API Key</span>
+                    <span id="keyStatusLabel" data-en="No API Key" data-es="Sin clave API">No API Key</span>
                 </button>
             </div>
         </div>
@@ -62,8 +67,8 @@
     <div class="app-container">
         <!-- Hero Section -->
         <section class="hero">
-            <h2>Is your bet slip a <span>mathematical disaster</span>?</h2>
-            <p>Upload a screenshot of your soccer bet. The AI will audit your risk exposure and emotional biases.</p>
+            <h2 data-en="Is your bet slip a mathematical disaster?" data-es="¿Es tu ticket de apuesta un desastre matemático?">Is your bet slip a <span>mathematical disaster</span>?</h2>
+            <p data-en="Upload a screenshot of your soccer bet. The AI will audit your risk exposure and emotional biases." data-es="Sube una captura de tu apuesta de fútbol. La IA auditará tu exposición al riesgo y sesgos emocionales.">Upload a screenshot of your soccer bet. The AI will audit your risk exposure and emotional biases.</p>
         </section>
 
         <main>
@@ -72,9 +77,9 @@
                 <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" hidden>
                 <div class="upload-content" id="upload-content">
                     <div class="upload-icon">📸</div>
-                    <h3>Drag & Drop your bet slip capture</h3>
-                    <p>or click to browse your device</p>
-                    <span class="file-limits">Supported formats: JPG, PNG, WEBP (Max. 5MB)</span>
+                    <h3 data-en="Drag & Drop your bet slip capture" data-es="Arrastra y suelta la captura de tu ticket">Drag & Drop your bet slip capture</h3>
+                    <p data-en="or click to browse your device" data-es="o haz clic para buscar en tu dispositivo">or click to browse your device</p>
+                    <span class="file-limits" data-en="Supported formats: JPG, PNG, WEBP (Max. 5MB)" data-es="Formatos admitidos: JPG, PNG, WEBP (Máx. 5MB)">Supported formats: JPG, PNG, WEBP (Max. 5MB)</span>
                 </div>
                 <div class="preview-container hidden" id="preview-container">
                     <img id="image-preview" src="" alt="Bet slip preview">
@@ -85,7 +90,7 @@
             <!-- Loading State -->
             <section class="loading-section hidden" id="loading-state">
                 <div class="pulse-spinner"></div>
-                <p id="loading-message">Auditing mathematical risk...</p>
+                <p id="loading-message" data-en="Auditing mathematical risk..." data-es="Analizando riesgo matemático...">Auditing mathematical risk...</p>
             </section>
 
             <!-- Error Message Banner -->
@@ -96,15 +101,15 @@
                 <!-- KPI Section -->
                 <div class="kpi-grid">
                     <div class="kpi-card glass-card">
-                        <span class="kpi-label">Total Odds</span>
+                        <span class="kpi-label" data-en="Total Odds" data-es="Cuota Total">Total Odds</span>
                         <span class="kpi-value" id="kpi-cuota">0.00</span>
                     </div>
                     <div class="kpi-card glass-card">
-                        <span class="kpi-label">Implicit Probability</span>
+                        <span class="kpi-label" data-en="Implicit Probability" data-es="Probabilidad Implícita">Implicit Probability</span>
                         <span class="kpi-value" id="kpi-probabilidad">0.0%</span>
                     </div>
                     <div class="kpi-card glass-card highlight-card" id="score-card">
-                        <span class="kpi-label">Toxicity Score</span>
+                        <span class="kpi-label" data-en="Toxicity Score" data-es="Nota de Toxicidad">Toxicity Score</span>
                         <span class="kpi-value" id="kpi-score">50</span>
                     </div>
                 </div>
@@ -112,7 +117,7 @@
                 <!-- Risk Bar -->
                 <div class="risk-bar-container glass-card">
                     <div class="risk-bar-header">
-                        <span>Reality Check Verdict</span>
+                        <span data-en="Reality Check Verdict" data-es="Veredicto de Realidad">Reality Check Verdict</span>
                         <span id="risk-label">Moderate</span>
                     </div>
                     <div class="risk-bar-bg">
@@ -140,7 +145,7 @@
                     <div class="flags-column red-column glass-card">
                         <div class="column-header">
                             <span class="icon">🚨</span>
-                            <h2>Risk Warnings (Red Flags)</h2>
+                            <h2 data-en="Risk Warnings (Red Flags)" data-es="Alertas de Riesgo (Red Flags)">Risk Warnings (Red Flags)</h2>
                         </div>
                         <div class="flags-list" id="red-flags-list">
                             <!-- Injected dynamically -->
@@ -151,7 +156,7 @@
                     <div class="flags-column green-column glass-card">
                         <div class="column-header">
                             <span class="icon">✅</span>
-                            <h2>Value Highlights (Green Flags)</h2>
+                            <h2 data-en="Value Highlights (Green Flags)" data-es="Aspectos de Valor (Green Flags)">Value Highlights (Green Flags)</h2>
                         </div>
                         <div class="flags-list" id="green-flags-list">
                             <!-- Injected dynamically -->
@@ -160,7 +165,7 @@
                 </div>
 
                 <div class="action-bar">
-                    <button class="btn btn-secondary" id="reset-btn">Audit another bet</button>
+                    <button class="btn btn-secondary" id="reset-btn" data-en="Audit another bet" data-es="Auditar otra apuesta">Audit another bet</button>
                 </div>
             </section>
         </main>
@@ -183,33 +188,33 @@
     <!-- ── EDUCATIONAL GUIDE & FAQS ── -->
     <section class="glass-card container" style="margin-top: 40px; padding: 24px; margin-bottom: 32px; border: 1px solid var(--border-light); max-width: 1200px; margin-left: auto; margin-right: auto;">
         <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-1); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-            <span>🧠 Sports Betting Risk & Psychological Management Guide</span>
+            <span data-en="🧠 Sports Betting Risk & Psychological Management Guide" data-es="🧠 Guía de Riesgo y Gestión Psicológica en Apuestas Deportivas">🧠 Sports Betting Risk & Psychological Management Guide</span>
         </div>
         <div style="color: var(--text-2); font-size: 0.95rem; line-height: 1.6; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
             <div>
-                <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 1.05rem; font-weight: 700;">Cognitive Biases in Sports Betting</h4>
-                <p style="margin-bottom: 12px;">Sports betting is heavily affected by psychological heuristics. The most dangerous is the **illusion of control**, where betters believe their sports knowledge significantly mitigates risk. Accumulator bets (multis) compound this illusion. By joining multiple independent events, you multiply the odds, but you exponentially decrease the mathematical probability of winning, creating a guaranteed negative expected value (-EV) for your capital.</p>
-                <p>Revenge betting is another critical bias: trying to recoup losses immediately by placing higher stakes on random events, leading to rapid drawdown and ruin.</p>
+                <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 1.05rem; font-weight: 700;" data-en="Cognitive Biases in Sports Betting" data-es="Sesgos Cognitivos en Apuestas Deportivas">Cognitive Biases in Sports Betting</h4>
+                <p style="margin-bottom: 12px;" data-en="Sports betting is heavily affected by psychological heuristics. The most dangerous is the illusion of control, where betters believe their sports knowledge significantly mitigates risk. Accumulator bets (multis) compound this illusion. By joining multiple independent events, you multiply the odds, but you exponentially decrease the mathematical probability of winning, creating a guaranteed negative expected value (-EV) for your capital." data-es="Las apuestas deportivas están muy influenciadas por heurísticas psicológicas. La más peligrosa es la ilusión de control, donde los apostadores creen que su conocimiento deportivo mitiga significativamente el riesgo. Las apuestas combinadas (acumuladores) agravan esta ilusión. Al unir múltiples eventos independientes, multiplicas la cuota, pero disminuyes exponencialmente la probabilidad matemática de ganar, creando un valor esperado negativo (-EV) garantizado para tu capital."></p>
+                <p data-en="Revenge betting is another critical bias: trying to recoup losses immediately by placing higher stakes on random events, leading to rapid drawdown and ruin." data-es="La apuesta por venganza es otro sesgo crítico: intentar recuperar pérdidas inmediatamente apostando cantidades más altas en eventos aleatorios, lo que lleva a una rápida pérdida del capital y a la ruina."></p>
             </div>
             <div>
-                <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 1.05rem; font-weight: 700;">Mathematical Foundations of Bankroll Control</h4>
-                <p style="margin-bottom: 12px;">Successful risk management requires rigorous bankroll control. Professional operators never risk more than 1% to 2% of their total bankroll on a single setup, regardless of their perceived confidence. Accumulators with high complexity scores (above 10.0 total odds) should represent less than 0.25% of your total capital.</p>
+                <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 1.05rem; font-weight: 700;" data-en="Mathematical Foundations of Bankroll Control" data-es="Fundamentos Matemáticos del Control de Capital">Mathematical Foundations of Bankroll Control</h4>
+                <p style="margin-bottom: 12px;" data-en="Successful risk management requires rigorous bankroll control. Professional operators never risk more than 1% to 2% of their total bankroll on a single setup, regardless of their perceived confidence. Accumulators with high complexity scores (above 10.0 total odds) should represent less than 0.25% of your total capital." data-es="Una gestión de riesgos exitosa requiere un control riguroso del capital (bankroll). Los operadores profesionales nunca arriesgan más del 1% al 2% de su saldo total en una sola apuesta, independientemente de su supuesta confianza. Los acumuladores con altas puntuaciones de complejidad (cuota total superior a 10.0) deberían representar menos del 0.25% de tu capital total."></p>
                 <ul style="padding-left: 20px; margin-bottom: 12px; list-style-type: disc;">
-                    <li style="margin-bottom: 6px;"><strong>Understand Implicit Probability:</strong> Total odds of 5.0 translate to a mere 20% statistical chance of success, excluding the bookmaker's margin (overround).</li>
-                    <li style="margin-bottom: 6px;"><strong>Always Calculate Overround:</strong> Bookmakers add a fee built into the odds. The more selections you add, the more commission you pay.</li>
+                    <li style="margin-bottom: 6px;" data-en="Understand Implicit Probability: Total odds of 5.0 translate to a mere 20% statistical chance of success, excluding the bookmaker's margin (overround)." data-es="Entiende la probabilidad implícita: Una cuota total de 5.0 se traduce en una probabilidad estadística de éxito de solo el 20%, excluyendo el margen de la casa de apuestas (overround)."></li>
+                    <li style="margin-bottom: 6px;" data-en="Always Calculate Overround: Bookmakers add a fee built into the odds. The more selections you add, the more commission you pay." data-es="Calcula siempre el Overround: Las casas de apuestas añaden una comisión integrada en las cuotas. Cuantas más selecciones añadas, más comisión pagarás."></li>
                 </ul>
             </div>
         </div>
         <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.05); color: var(--text-2); font-size: 0.95rem; line-height: 1.6;">
-            <h4 style="color: var(--accent); margin-bottom: 12px; font-size: 1.05rem; font-weight: 700;">Frequently Asked Questions (FAQ)</h4>
+            <h4 style="color: var(--accent); margin-bottom: 12px; font-size: 1.05rem; font-weight: 700;" data-en="Frequently Asked Questions (FAQ)" data-es="Preguntas Frecuentes (FAQ)">Frequently Asked Questions (FAQ)</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
                 <div>
-                    <strong style="color: var(--text-1); display: block; margin-bottom: 6px;">How does the AI toxicity analysis work?</strong>
-                    <p>Our AI reads the events, markets, and total odds of your ticket. It calculates the implicit probability of the ticket, checks for correlation traps (e.g., betting on multiple variables in the same match that don't compound mathematically), and scores the psychological risk factors associated with your selection.</p>
+                    <strong style="color: var(--text-1); display: block; margin-bottom: 6px;" data-en="How does the AI toxicity analysis work?" data-es="¿Cómo funciona el análisis de toxicidad por IA?">How does the AI toxicity analysis work?</strong>
+                    <p data-en="Our AI reads the events, markets, and total odds of your ticket. It calculates the implicit probability of the ticket, checks for correlation traps (e.g., betting on multiple variables in the same match that don't compound mathematically), and scores the psychological risk factors associated with your selection." data-es="Nuestra IA lee los eventos, mercados y cuotas totales de tu ticket. Calcula la probabilidad implícita del ticket, comprueba si hay trampas de correlación (por ejemplo, apostar a múltiples variables en el mismo partido que no se compensan matemáticamente) y califica los factores de riesgo psicológico asociados con tu selección."></p>
                 </div>
                 <div>
-                    <strong style="color: var(--text-1); display: block; margin-bottom: 6px;">Is my bet slip data private?</strong>
-                    <p>Yes. All image upload, client-side metadata analysis, and PIN decryption are performed locally in your browser. We do not store your bet slip captures on any external server. The OCR parsing and Gemini validation call runs through Google's official API endpoints using your personal key.</p>
+                    <strong style="color: var(--text-1); display: block; margin-bottom: 6px;" data-en="Is my bet slip data private?" data-es="¿Son privados los datos de mi apuesta?">Is my bet slip data private?</strong>
+                    <p data-en="Yes. All image upload, client-side metadata analysis, and PIN decryption are performed locally in your browser. We do not store your bet slip captures on any external server. The OCR parsing and Gemini validation call runs through Google's official API endpoints using your personal key." data-es="Sí. Toda la subida de imágenes, el análisis de metadatos del lado del cliente y la desencriptación del PIN se realizan localmente en tu navegador. No almacenamos tus capturas de tickets en ningún servidor externo. El análisis OCR y la llamada de validación de Gemini se ejecutan a través de los endpoints oficiales de la API de Google utilizando tu clave personal."></p>
                 </div>
             </div>
         </div>
@@ -218,15 +223,14 @@
     <!-- ══ DISCLAIMER / FOOTER ═══════════════════════════════════════════ -->
     <footer class="disclaimer">
         <p>
-            <strong>⚠ Legal Disclaimer:</strong> Betting Reality Check is an educational AI-based simulation tool.
-            It does not constitute financial or sports betting advice. Gambling carries a <strong>high risk of financial loss</strong>. 
-            Designed to promote responsible gaming and risk control.
+            <strong data-en="⚠ Legal Disclaimer:" data-es="⚠ Descargo de Responsabilidad Legal:">⚠ Legal Disclaimer:</strong>
+            <span data-en="Betting Reality Check is an educational AI-based simulation tool. It does not constitute financial or sports betting advice. Gambling carries a high risk of financial loss. Designed to promote responsible gaming and risk control." data-es="Betting Reality Check es una herramienta de simulación educativa basada en IA. No constituye asesoramiento financiero ni de apuestas deportivas. El juego conlleva un alto riesgo de pérdida financiera. Diseñado para promover el juego responsable y el control del riesgo.">Betting Reality Check is an educational AI-based simulation tool. It does not constitute financial or sports betting advice. Gambling carries a high risk of financial loss. Designed to promote responsible gaming and risk control.</span>
         </p>
         <div class="disclaimer-links">
-            <a href="../inicio/privacy.html">Privacy Policy</a>
-            <a href="../inicio/terms.html">Terms of Use</a>
-            <a href="../inicio/about.html">About & Contact</a>
-            <a href="https://gcarnf04.github.io/">More Tools</a>
+            <a href="../inicio/privacy.html" data-en="Privacy Policy" data-es="Política de Privacidad">Privacy Policy</a>
+            <a href="../inicio/terms.html" data-en="Terms of Use" data-es="Términos de Uso">Terms of Use</a>
+            <a href="../inicio/about.html" data-en="About & Contact" data-es="Contacto">About & Contact</a>
+            <a href="https://gcarnf04.github.io/" data-en="More Tools" data-es="Más Herramientas">More Tools</a>
         </div>
     </footer>
 
@@ -239,14 +243,14 @@
             <div class="modal-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
-            <div class="modal-title">Set up your Gemini API Key</div>
-            <div class="modal-desc">
+            <div class="modal-title" data-en="Set up your Gemini API Key" data-es="Configurar clave API de Gemini">Set up your Gemini API Key</div>
+            <div class="modal-desc" data-en="You need a Gemini Key (starts with AIza). We'll encrypt it with your PIN. It only leaves your device to call Google." data-es="Necesitas una clave de Gemini (empieza por AIza). La encriptaremos con tu PIN. Solo saldrá de tu dispositivo para llamar a Google.">
                 You need a <strong>Gemini Key</strong> (starts with <code>AIza</code>).<br>
                 We'll encrypt it with your PIN. It only leaves your device to call Google.<br>
                 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get your free key at Google AI Studio →</a>
             </div>
             <div class="form-group">
-                <label class="form-label">Gemini API Key</label>
+                <label class="form-label" data-en="Gemini API Key" data-es="Clave API de Gemini">Gemini API Key</label>
                 <div class="input-group">
                     <input class="input-field" type="password" id="modalApiKeyInput" placeholder="AIzaSy..." autocomplete="off" />
                     <button class="btn-icon" id="btnToggleApiKey" title="Show / hide">
@@ -255,20 +259,20 @@
                 </div>
             </div>
             <div class="form-group">
-                <label class="form-label">Create a 4-digit PIN</label>
+                <label class="form-label" data-en="Create a 4-digit PIN" data-es="Crea un PIN de 4 dígitos">Create a 4-digit PIN</label>
                 <div class="pin-inputs" id="setupPinInputs">
                     <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
                     <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
                     <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
                     <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
                 </div>
-                <p class="form-hint" style="text-align:center">This PIN is the only way to unlock your key. Don't forget it.</p>
+                <p class="form-hint" style="text-align:center" data-en="This PIN is the only way to unlock your key. Don't forget it." data-es="Este PIN es la única forma de desbloquear tu clave. No lo olvides.">This PIN is the only way to unlock your key. Don't forget it.</p>
             </div>
             <div id="modalError" style="color: #ef4444; font-size: 13px; min-height: 18px; text-align:center; margin-bottom: 8px;"></div>
             <div class="modal-actions" style="flex-wrap: wrap;">
-                <button class="btn btn-ghost btn-full" id="btnCancelSetup">Cancel</button>
-                <button class="btn btn-primary btn-full" id="btnSaveKey">Save & Activate</button>
-                <button class="btn btn-ghost btn-full btn-secondary" id="btnClearKey" style="margin-top:8px; display:none; border-color:#ef4444; color:#ef4444;">Delete Saved Key</button>
+                <button class="btn btn-ghost btn-full" id="btnCancelSetup" data-en="Cancel" data-es="Cancelar">Cancel</button>
+                <button class="btn btn-primary btn-full" id="btnSaveKey" data-en="Save & Activate" data-es="Guardar y Activar">Save & Activate</button>
+                <button class="btn btn-ghost btn-full btn-secondary" id="btnClearKey" style="margin-top:8px; display:none; border-color:#ef4444; color:#ef4444;" data-en="Delete Saved Key" data-es="Eliminar clave guardada">Delete Saved Key</button>
             </div>
         </div>
     </div>
@@ -279,8 +283,8 @@
             <div class="modal-icon" style="margin: 0 auto 20px;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
-            <div class="modal-title">Enter your PIN</div>
-            <div class="modal-desc">You have a saved key. Unlock it with your PIN.</div>
+            <div class="modal-title" data-en="Enter your PIN" data-es="Introduce tu PIN">Enter your PIN</div>
+            <div class="modal-desc" data-en="You have a saved key. Unlock it with your PIN." data-es="Tienes una clave guardada. Desbloquéala con tu PIN.">You have a saved key. Unlock it with your PIN.</div>
             <div class="pin-inputs" id="loginPinInputs" style="justify-content:center; margin: 16px 0;">
                 <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
                 <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
@@ -289,8 +293,8 @@
             </div>
             <div id="loginError" style="color: #ef4444; font-size: 13px; min-height: 18px; margin-bottom: 8px;"></div>
             <div class="modal-actions" style="margin-top: 20px;">
-                <button class="btn btn-ghost btn-full" id="btnCancelLogin">Cancel</button>
-                <button class="btn btn-primary btn-full" id="btnUnlock">Unlock</button>
+                <button class="btn btn-ghost btn-full" id="btnCancelLogin" data-en="Cancel" data-es="Cancelar">Cancel</button>
+                <button class="btn btn-primary btn-full" id="btnUnlock" data-en="Unlock" data-es="Desbloquear">Unlock</button>
             </div>
         </div>
     </div>

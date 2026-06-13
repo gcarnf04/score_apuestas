@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let loadingInterval = null;
     let selectedFile = null;
 
-    const loadingTexts = [
+    const loadingTextsEN = [
         "Reading odds and events...",
         "Calculating probability of ruin...",
         "Generating risk audit...",
@@ -59,20 +59,29 @@ document.addEventListener('DOMContentLoaded', () => {
         "Analyzing viability in liquid markets...",
         "Evaluating accumulator coverage..."
     ];
+    const loadingTextsES = [
+        "Leyendo cuotas y eventos...",
+        "Calculando probabilidad de ruina...",
+        "Generando auditoría de riesgo...",
+        "Comprobando sesgos psicológicos...",
+        "Analizando viabilidad en mercados líquidos...",
+        "Evaluando cobertura de combinada..."
+    ];
 
     // ==========================================
     // 1. VAULT KEY STATUS & PIN HANDLERS
     // ==========================================
     function updateVaultStatusUI() {
+        const lang = Lang.get();
         if (Vault.isUnlocked()) {
             keyStatusDot.className = 'status-dot active';
-            keyStatusLabel.textContent = 'API Key Active';
+            keyStatusLabel.textContent = lang === 'es' ? 'Clave API Activa' : 'API Key Active';
         } else if (Vault.hasStoredKey()) {
             keyStatusDot.className = 'status-dot error';
-            keyStatusLabel.textContent = 'Locked (PIN Required)';
+            keyStatusLabel.textContent = lang === 'es' ? 'Bloqueado (PIN Requerido)' : 'Locked (PIN Required)';
         } else {
             keyStatusDot.className = 'status-dot';
-            keyStatusLabel.textContent = 'No API Key';
+            keyStatusLabel.textContent = lang === 'es' ? 'Sin clave API' : 'No API Key';
         }
     }
 
@@ -81,6 +90,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Vault.hasStoredKey() && !Vault.isUnlocked()) {
         openLoginModal();
     }
+
+    // Language switcher setup
+    const langSelect = document.querySelector('.lang-select');
+    if (langSelect) {
+        langSelect.value = Lang.get();
+        langSelect.addEventListener('change', (e) => {
+            Lang.set(e.target.value);
+        });
+    }
+    window.addEventListener('langchange', () => {
+        updateVaultStatusUI();
+    });
 
     // Auto-focus move for PIN input fields
     function setupPinAutofocus(inputs) {
@@ -309,6 +330,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function startLoadingAnimation() {
         loadingState.classList.remove('hidden');
         let index = 0;
+        const lang = Lang.get();
+        const loadingTexts = lang === 'es' ? loadingTextsES : loadingTextsEN;
         loadingMessage.textContent = loadingTexts[0];
         
         loadingInterval = setInterval(() => {
@@ -381,18 +404,19 @@ document.addEventListener('DOMContentLoaded', () => {
         kpiProbabilidad.textContent = `${data.probabilidad_implicta.toFixed(1)}%`;
         kpiScore.textContent = data.toxicity_score;
 
+        const lang = Lang.get();
         let scoreColor = '#ef4444'; // Red
-        let riskText = 'Critical Risk';
+        let riskText = lang === 'es' ? 'Riesgo Crítico' : 'Critical Risk';
         
         if (data.toxicity_score >= 80) {
             scoreColor = '#10b981'; // Green
-            riskText = 'Low Risk (Professional)';
+            riskText = lang === 'es' ? 'Riesgo Bajo (Profesional)' : 'Low Risk (Professional)';
         } else if (data.toxicity_score >= 50) {
             scoreColor = '#f59e0b'; // Amber
-            riskText = 'Moderate Risk';
+            riskText = lang === 'es' ? 'Riesgo Moderado' : 'Moderate Risk';
         } else if (data.toxicity_score >= 30) {
             scoreColor = '#f97316'; // Orange
-            riskText = 'High Risk';
+            riskText = lang === 'es' ? 'Riesgo Alto' : 'High Risk';
         }
 
         scoreCard.style.borderColor = scoreColor;
@@ -406,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render Red Flags
         redFlagsList.innerHTML = '';
         if (data.red_flags.length === 0) {
-            redFlagsList.innerHTML = '<div class="no-flags">No red flags detected. Excellent selection parameters.</div>';
+            redFlagsList.innerHTML = `<div class="no-flags">${lang === 'es' ? 'No se detectaron alertas de riesgo. Excelentes parámetros.' : 'No red flags detected. Excellent selection parameters.'}</div>`;
         } else {
             data.red_flags.forEach(flag => {
                 const card = document.createElement('div');
@@ -422,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render Green Flags
         greenFlagsList.innerHTML = '';
         if (data.green_flags.length === 0) {
-            greenFlagsList.innerHTML = '<div class="no-flags">No value highlights detected.</div>';
+            greenFlagsList.innerHTML = `<div class="no-flags">${lang === 'es' ? 'No se detectaron aspectos de valor.' : 'No value highlights detected.'}</div>`;
         } else {
             data.green_flags.forEach(flag => {
                 const card = document.createElement('div');
