@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeLoginModal();
             // If there's an active upload pending, run it
             if (selectedFile) {
-                runInterstitialAndUpload(selectedFile);
+                uploadAndAnalyze(selectedFile);
             }
         } else {
             loginError.textContent = 'Invalid PIN. Try again.';
@@ -205,31 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ==========================================
-    // 2. INTERSTITIAL AD FLOW (EXECUTION LOCK)
-    // ==========================================
-    function runInterstitialAndUpload(file) {
-        interstitialAd.classList.remove('hidden');
-        btnSkipAd.disabled = true;
-        let count = 5;
-        adCountdown.textContent = `Wait ${count}s...`;
-
-        const countdownInterval = setInterval(() => {
-            count--;
-            if (count > 0) {
-                adCountdown.textContent = `Wait ${count}s...`;
-            } else {
-                clearInterval(countdownInterval);
-                adCountdown.textContent = 'Ready';
-                btnSkipAd.disabled = false;
-            }
-        }, 1000);
-
-        btnSkipAd.onclick = () => {
-            interstitialAd.classList.add('hidden');
-            uploadAndAnalyze(file);
-        };
-    }
+    // Interstitial Ad Flow removed to comply with zero-gating AdSense rules
 
     // ==========================================
     // 3. FILE SELECTION & UPLOAD HANDLERS
@@ -316,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showError("API Key required. Enter your key in the vault modal first.");
                 }
             } else {
-                runInterstitialAndUpload(file);
+                uploadAndAnalyze(file);
             }
         };
         reader.readAsDataURL(file);

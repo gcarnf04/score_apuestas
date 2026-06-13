@@ -48,8 +48,14 @@
     <!-- ══ TOP AD BANNER ═════════════════════════════════════════════════ -->
     <div class="app-container" style="padding-bottom: 0; padding-top: 1rem;">
         <div class="ad-banner">
-            <!-- AdSense Top Banner -->
-            <span>[Advertisement]</span>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-2977545376736575"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
         </div>
     </div>
 
@@ -174,6 +180,41 @@
         </div>
     </div>
 
+    <!-- ── EDUCATIONAL GUIDE & FAQS ── -->
+    <section class="glass-card container" style="margin-top: 40px; padding: 24px; margin-bottom: 32px; border: 1px solid var(--border-light); max-width: 1200px; margin-left: auto; margin-right: auto;">
+        <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-1); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+            <span>🧠 Sports Betting Risk & Psychological Management Guide</span>
+        </div>
+        <div style="color: var(--text-2); font-size: 0.95rem; line-height: 1.6; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+            <div>
+                <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 1.05rem; font-weight: 700;">Cognitive Biases in Sports Betting</h4>
+                <p style="margin-bottom: 12px;">Sports betting is heavily affected by psychological heuristics. The most dangerous is the **illusion of control**, where betters believe their sports knowledge significantly mitigates risk. Accumulator bets (multis) compound this illusion. By joining multiple independent events, you multiply the odds, but you exponentially decrease the mathematical probability of winning, creating a guaranteed negative expected value (-EV) for your capital.</p>
+                <p>Revenge betting is another critical bias: trying to recoup losses immediately by placing higher stakes on random events, leading to rapid drawdown and ruin.</p>
+            </div>
+            <div>
+                <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 1.05rem; font-weight: 700;">Mathematical Foundations of Bankroll Control</h4>
+                <p style="margin-bottom: 12px;">Successful risk management requires rigorous bankroll control. Professional operators never risk more than 1% to 2% of their total bankroll on a single setup, regardless of their perceived confidence. Accumulators with high complexity scores (above 10.0 total odds) should represent less than 0.25% of your total capital.</p>
+                <ul style="padding-left: 20px; margin-bottom: 12px; list-style-type: disc;">
+                    <li style="margin-bottom: 6px;"><strong>Understand Implicit Probability:</strong> Total odds of 5.0 translate to a mere 20% statistical chance of success, excluding the bookmaker's margin (overround).</li>
+                    <li style="margin-bottom: 6px;"><strong>Always Calculate Overround:</strong> Bookmakers add a fee built into the odds. The more selections you add, the more commission you pay.</li>
+                </ul>
+            </div>
+        </div>
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.05); color: var(--text-2); font-size: 0.95rem; line-height: 1.6;">
+            <h4 style="color: var(--accent); margin-bottom: 12px; font-size: 1.05rem; font-weight: 700;">Frequently Asked Questions (FAQ)</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <div>
+                    <strong style="color: var(--text-1); display: block; margin-bottom: 6px;">How does the AI toxicity analysis work?</strong>
+                    <p>Our AI reads the events, markets, and total odds of your ticket. It calculates the implicit probability of the ticket, checks for correlation traps (e.g., betting on multiple variables in the same match that don't compound mathematically), and scores the psychological risk factors associated with your selection.</p>
+                </div>
+                <div>
+                    <strong style="color: var(--text-1); display: block; margin-bottom: 6px;">Is my bet slip data private?</strong>
+                    <p>Yes. All image upload, client-side metadata analysis, and PIN decryption are performed locally in your browser. We do not store your bet slip captures on any external server. The OCR parsing and Gemini validation call runs through Google's official API endpoints using your personal key.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ══ DISCLAIMER / FOOTER ═══════════════════════════════════════════ -->
     <footer class="disclaimer">
         <p>
@@ -189,28 +230,7 @@
         </div>
     </footer>
 
-    <!-- ══ INTERSTITIAL AD (Execution Lock) ═════════════════════════════ -->
-    <div class="interstitial-backdrop hidden" id="interstitial-ad">
-        <div class="interstitial-content glass-card">
-            <div class="interstitial-header">
-                <span>Advertisement</span>
-                <span class="interstitial-countdown" id="ad-countdown">Wait 5s...</span>
-            </div>
-            <div class="ad-square">
-                <!-- AdSense Interstitial Ad Unit -->
-                <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-2977545376736575"
-                     data-ad-slot="1234567890"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-                <script>
-                     (adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
-            </div>
-            <button class="btn btn-secondary btn-full" id="btn-skip-ad" disabled>Skip Ad</button>
-        </div>
-    </div>
+    <!-- Interstitial Ad modal removed to comply with zero-gating AdSense rules -->
 
     <!-- ══ MODAL: Setup API Key ══════════════════════════════════════════ -->
     <div class="modal-backdrop hidden" id="setupModal">
@@ -276,7 +296,7 @@
     </div>
 
     <!-- ══ SCRIPTS ═══════════════════════════════════════════════════════ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="crypto-js.min.js"></script>
     <script src="vault.js"></script>
     <script src="app.js"></script>
 </body>
