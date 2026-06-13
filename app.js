@@ -382,15 +382,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             renderResults(data);
 
-        } catch (error) {
-            console.warn("[Backend Offline/Blocked] Falling back to direct browser Gemini call...", error);
+        } catch (backendError) {
+            console.warn("[Backend Offline/Blocked] Falling back to direct browser Gemini call...", backendError);
             try {
                 // If local server fails, execute the analysis 100% serverless in the browser
                 const slipData = await callGeminiDirectly(file, apiKey);
                 const auditResult = auditBetClientSide(slipData);
                 renderResults(auditResult);
             } catch (fallbackError) {
-                showError(fallbackError.message || "Failed to process the bet slip. Please check your API key.");
+                console.error("[Fallback Failed]", fallbackError);
+                
+                // Show a detailed error message in the UI pointing out both failures
+                const backendMsg = backendError.message || backendError;
+                const fallbackMsg = fallbackError.message || fallbackError;
+                showError(`Audit failed. Backend: (${backendMsg}) | Direct API Fallback: (${fallbackMsg})`);
             }
         } finally {
             stopLoadingAnimation();
