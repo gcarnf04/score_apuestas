@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Reality Check | Sports Betting Risk & Toxicity Auditor</title>
+    <meta name="description" content="AI-powered sports betting auditor. Upload a capture of your soccer bet slip and get a raw mathematical and psychological risk analysis.">
+    
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2977545376736575" crossorigin="anonymous"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="background-decor">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <!-- ══ HEADER (Standard 3-Zone Layout) ════════════════════════════════ -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-left">
+                <a href="https://gcarnf04.github.io/" class="btn-icon" title="Back to Hub">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </a>
+                <div class="logo">
+                    <span class="logo-text">Betting Reality Check</span>
+                    <span class="logo-badge">Beta</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-ghost btn-sm" id="btnOpenSetup">
+                    <span class="status-dot" id="keyStatusDot"></span>
+                    <span id="keyStatusLabel">No API Key</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══ TOP AD BANNER ═════════════════════════════════════════════════ -->
+    <div class="app-container" style="padding-bottom: 0; padding-top: 1rem;">
+        <div class="ad-banner">
+            <!-- AdSense Top Banner -->
+            <span>[Advertisement]</span>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h2>Is your bet slip a <span>mathematical disaster</span>?</h2>
+            <p>Upload a screenshot of your soccer bet. The AI will audit your risk exposure and emotional biases.</p>
+        </section>
+
+        <main>
+            <!-- Upload Section -->
+            <section class="upload-section glass-card" id="dropzone">
+                <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" hidden>
+                <div class="upload-content" id="upload-content">
+                    <div class="upload-icon">📸</div>
+                    <h3>Drag & Drop your bet slip capture</h3>
+                    <p>or click to browse your device</p>
+                    <span class="file-limits">Supported formats: JPG, PNG, WEBP (Max. 5MB)</span>
+                </div>
+                <div class="preview-container hidden" id="preview-container">
+                    <img id="image-preview" src="" alt="Bet slip preview">
+                    <button class="remove-btn" id="remove-btn" aria-label="Remove image">&times;</button>
+                </div>
+            </section>
+
+            <!-- Loading State -->
+            <section class="loading-section hidden" id="loading-state">
+                <div class="pulse-spinner"></div>
+                <p id="loading-message">Auditing mathematical risk...</p>
+            </section>
+
+            <!-- Error Message Banner -->
+            <div class="error-banner hidden" id="error-banner" style="margin-bottom: 1.5rem;"></div>
+
+            <!-- Results Section -->
+            <section class="results-section hidden" id="results-panel">
+                <!-- KPI Section -->
+                <div class="kpi-grid">
+                    <div class="kpi-card glass-card">
+                        <span class="kpi-label">Total Odds</span>
+                        <span class="kpi-value" id="kpi-cuota">0.00</span>
+                    </div>
+                    <div class="kpi-card glass-card">
+                        <span class="kpi-label">Implicit Probability</span>
+                        <span class="kpi-value" id="kpi-probabilidad">0.0%</span>
+                    </div>
+                    <div class="kpi-card glass-card highlight-card" id="score-card">
+                        <span class="kpi-label">Toxicity Score</span>
+                        <span class="kpi-value" id="kpi-score">50</span>
+                    </div>
+                </div>
+
+                <!-- Risk Bar -->
+                <div class="risk-bar-container glass-card">
+                    <div class="risk-bar-header">
+                        <span>Reality Check Verdict</span>
+                        <span id="risk-label">Moderate</span>
+                    </div>
+                    <div class="risk-bar-bg">
+                        <div class="risk-bar-fill" id="risk-bar-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Mid-page Ad Banner -->
+                <div class="ad-banner">
+                    <!-- AdSense Mid Banner -->
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-2977545376736575"
+                         data-ad-slot="1234567890"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                </div>
+
+                <!-- Flags Section -->
+                <div class="flags-grid">
+                    <!-- Red Flags Column -->
+                    <div class="flags-column red-column glass-card">
+                        <div class="column-header">
+                            <span class="icon">🚨</span>
+                            <h2>Risk Warnings (Red Flags)</h2>
+                        </div>
+                        <div class="flags-list" id="red-flags-list">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Green Flags Column -->
+                    <div class="flags-column green-column glass-card">
+                        <div class="column-header">
+                            <span class="icon">✅</span>
+                            <h2>Value Highlights (Green Flags)</h2>
+                        </div>
+                        <div class="flags-list" id="green-flags-list">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-bar">
+                    <button class="btn btn-secondary" id="reset-btn">Audit another bet</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- ══ BOTTOM AD BANNER ═════════════════════════════════════════════ -->
+        <div class="ad-banner">
+            <!-- AdSense Bottom Banner -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-2977545376736575"
+                 data-ad-slot="1234567890"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+        </div>
+    </div>
+
+    <!-- ══ DISCLAIMER / FOOTER ═══════════════════════════════════════════ -->
+    <footer class="disclaimer">
+        <p>
+            <strong>⚠ Legal Disclaimer:</strong> Betting Reality Check is an educational AI-based simulation tool.
+            It does not constitute financial or sports betting advice. Gambling carries a <strong>high risk of financial loss</strong>. 
+            Designed to promote responsible gaming and risk control.
+        </p>
+        <div class="disclaimer-links">
+            <a href="../inicio/privacy.html">Privacy Policy</a>
+            <a href="../inicio/terms.html">Terms of Use</a>
+            <a href="../inicio/about.html">About & Contact</a>
+            <a href="https://gcarnf04.github.io/">More Tools</a>
+        </div>
+    </footer>
+
+    <!-- ══ INTERSTITIAL AD (Execution Lock) ═════════════════════════════ -->
+    <div class="interstitial-backdrop hidden" id="interstitial-ad">
+        <div class="interstitial-content glass-card">
+            <div class="interstitial-header">
+                <span>Advertisement</span>
+                <span class="interstitial-countdown" id="ad-countdown">Wait 5s...</span>
+            </div>
+            <div class="ad-square">
+                <!-- AdSense Interstitial Ad Unit -->
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-2977545376736575"
+                     data-ad-slot="1234567890"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+            <button class="btn btn-secondary btn-full" id="btn-skip-ad" disabled>Skip Ad</button>
+        </div>
+    </div>
+
+    <!-- ══ MODAL: Setup API Key ══════════════════════════════════════════ -->
+    <div class="modal-backdrop hidden" id="setupModal">
+        <div class="modal">
+            <button class="modal-close" id="btnCloseSetup">✕</button>
+            <div class="modal-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div class="modal-title">Set up your Gemini API Key</div>
+            <div class="modal-desc">
+                You need a <strong>Gemini Key</strong> (starts with <code>AIza</code>).<br>
+                We'll encrypt it with your PIN. It only leaves your device to call Google.<br>
+                <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get your free key at Google AI Studio →</a>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Gemini API Key</label>
+                <div class="input-group">
+                    <input class="input-field" type="password" id="modalApiKeyInput" placeholder="AIzaSy..." autocomplete="off" />
+                    <button class="btn-icon" id="btnToggleApiKey" title="Show / hide">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Create a 4-digit PIN</label>
+                <div class="pin-inputs" id="setupPinInputs">
+                    <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
+                    <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
+                    <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
+                    <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
+                </div>
+                <p class="form-hint" style="text-align:center">This PIN is the only way to unlock your key. Don't forget it.</p>
+            </div>
+            <div id="modalError" style="color: #ef4444; font-size: 13px; min-height: 18px; text-align:center; margin-bottom: 8px;"></div>
+            <div class="modal-actions" style="flex-wrap: wrap;">
+                <button class="btn btn-ghost btn-full" id="btnCancelSetup">Cancel</button>
+                <button class="btn btn-primary btn-full" id="btnSaveKey">Save & Activate</button>
+                <button class="btn btn-ghost btn-full btn-secondary" id="btnClearKey" style="margin-top:8px; display:none; border-color:#ef4444; color:#ef4444;">Delete Saved Key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MODAL: Login with PIN ═════════════════════════════════════════ -->
+    <div class="modal-backdrop hidden" id="loginModal">
+        <div class="modal" style="text-align:center;">
+            <div class="modal-icon" style="margin: 0 auto 20px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div class="modal-title">Enter your PIN</div>
+            <div class="modal-desc">You have a saved key. Unlock it with your PIN.</div>
+            <div class="pin-inputs" id="loginPinInputs" style="justify-content:center; margin: 16px 0;">
+                <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
+                <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
+                <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
+                <input class="pin-input" type="text" inputmode="numeric" maxlength="1" />
+            </div>
+            <div id="loginError" style="color: #ef4444; font-size: 13px; min-height: 18px; margin-bottom: 8px;"></div>
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button class="btn btn-ghost btn-full" id="btnCancelLogin">Cancel</button>
+                <button class="btn btn-primary btn-full" id="btnUnlock">Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ SCRIPTS ═══════════════════════════════════════════════════════ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="vault.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
