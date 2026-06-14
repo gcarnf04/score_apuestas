@@ -36,35 +36,41 @@ class GeminiService:
             "Only return valid JSON matching the schema."
         )
 
-        try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = model.generate_content(
-                [
-                    {
-                        "mime_type": mime_type,
-                        "data": image_bytes
-                    },
-                    prompt
-                ],
-                generation_config=genai.GenerationConfig(
-                    response_mime_type="application/json",
-                    response_schema=BetSlip
+        models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.5-flash", "gemini-3-flash", "gemini-3.1-flash-lite"]
+        last_error = None
+        for model_name in models:
+            try:
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(
+                    [
+                        {
+                            "mime_type": mime_type,
+                            "data": image_bytes
+                        },
+                        prompt
+                    ],
+                    generation_config=genai.GenerationConfig(
+                        response_mime_type="application/json",
+                        response_schema=BetSlip
+                    )
                 )
-            )
 
-            text_response = response.text.strip()
-            data = json.loads(text_response)
-            
-            # Validate with Pydantic
-            validated_slip = BetSlip(**data)
-            return validated_slip
+                text_response = response.text.strip()
+                data = json.loads(text_response)
+                
+                # Validate with Pydantic
+                validated_slip = BetSlip(**data)
+                return validated_slip
+            except Exception as e:
+                last_error = e
+                err_str = str(e).lower()
+                if "429" in err_str or "resource_exhausted" in err_str or "quota" in err_str or "limit" in err_str:
+                    print(f"[GeminiService Quota Warning] {model_name} exhausted. Trying next model... Error: {e}")
+                    continue
+                if isinstance(e, (json.JSONDecodeError, ValidationError)):
+                    print(f"[GeminiService Parse Warning] {model_name} returned invalid/unparseable output. Trying next model... Error: {e}")
+                    continue
+                # For any other fatal error, raise it
+                raise GeminiServiceError(f"Error processing image with Gemini model {model_name}: {str(e)}") from e
 
-        except json.JSONDecodeError as e:
-            print(f"[GeminiService Debug] JSONDecodeError: {e}. Response was: {text_response if 'text_response' in locals() else 'None'}")
-            raise GeminiServiceError("Could not read the bet slip correctly. Please upload a clearer image.") from e
-        except ValidationError as e:
-            print(f"[GeminiService Debug] ValidationError: {e}. Data: {data if 'data' in locals() else 'None'}")
-            raise GeminiServiceError("Could not validate the extracted bet slip data. Please upload a clearer image.") from e
-        except Exception as e:
-            print(f"[GeminiService Debug] General Exception: {e}")
-            raise GeminiServiceError(f"Error processing image with Gemini: {str(e)}") from e
+        raise GeminiServiceError("All Gemini fallback models exhausted due to rate limit/quota.") from last_error

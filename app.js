@@ -437,47 +437,65 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.readAsDataURL(file);
         });
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         const prompt = `You are a sports betting risk manager. Analyze this soccer bet slip image and extract the breakdown into the following strict JSON format. RESPOND ENTIRELY IN ENGLISH, translating any team names, competitions, and markets to English if necessary.
 JSON structure: {"cuota_total": float, "stake_euros": float or null, "num_eventos": int, "selecciones": [{"evento": str, "mercado": str, "cuota": float, "competicion": str}]}.
 Only return valid JSON matching the schema.`;
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [
-                        { text: prompt },
-                        {
-                            inlineData: {
-                                mimeType: file.type,
-                                data: base64Data
-                            }
+        const models = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite'];
+        let lastError = null;
+
+        for (const modelName of models) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inlineData: {
+                                        mimeType: file.type,
+                                        data: base64Data
+                                    }
+                                }
+                            ]
+                        }],
+                        generationConfig: {
+                            responseMimeType: "application/json"
                         }
-                    ]
-                }],
-                generationConfig: {
-                    responseMimeType: "application/json"
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    const errMsg = errData.error?.message || `HTTP ${response.status}`;
+                    lastError = new Error(`[${modelName}] ${errMsg}`);
+                    if (response.status === 429) {
+                        console.warn(`[Quota Exhausted] ${modelName} returned 429. Falling back...`);
+                        continue;
+                    }
+                    throw lastError;
                 }
-            })
-        });
 
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error?.message || "Failed to communicate with Gemini API. Verify your API Key.");
+                const resData = await response.json();
+                const text = resData.candidates[0].content.parts[0].text;
+                return JSON.parse(text.trim());
+            } catch (err) {
+                lastError = err;
+                if (err.status === 429 || (err.message && err.message.includes('429')) || (err.message && err.message.toLowerCase().includes('quota'))) {
+                    console.warn(`[Quota/Rate Limit Error] ${modelName}:`, err);
+                    continue; // try next model
+                }
+                throw err;
+            }
         }
-
-        const resData = await response.json();
-        const text = resData.candidates[0].content.parts[0].text;
-        
-        // Return parsed JSON data
-        return JSON.parse(text.trim());
+        throw lastError || new Error("All fallback models exhausted due to rate limit/quota.");
     }
 
-    // JS Implementation of the 20 audit rules from logic_engine.py
     function auditBetClientSide(bet) {
         const red_flags = [];
         const green_flags = [];
