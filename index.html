@@ -171,6 +171,58 @@
                     <button class="btn btn-secondary" id="reset-btn" data-en="Audit another bet" data-es="Auditar otra apuesta">Audit another bet</button>
                 </div>
             </section>
+
+            <!-- ══ DASHBOARD & HISTORY SECTION ═════════════════════════════════ -->
+            <section class="dashboard-section glass-card" id="dashboard-panel" style="margin-top: 2rem; padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; flex-wrap: wrap; gap: 12px;">
+                    <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; margin: 0;">
+                        📊 <span data-en="Your Betting Performance Dashboard" data-es="Tu Panel de Rendimiento de Apuestas">Your Betting Performance Dashboard</span>
+                    </h3>
+                    <button class="btn btn-ghost btn-sm" id="btnDeleteHistory" style="border-color: rgba(239,68,68,0.2); color: #ef4444; background: rgba(239,68,68,0.05); padding: 4px 8px; font-size: 12px; cursor: pointer; border-radius: var(--radius-sm);" data-en="Clear History" data-es="Limpiar Historial">Clear History</button>
+                </div>
+                
+                <!-- Dashboard KPIs -->
+                <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 24px;">
+                    <div class="kpi-card glass-card" style="background: rgba(255,255,255,0.02); padding: 1.25rem; text-align: center;">
+                        <span class="kpi-label" style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); margin-bottom: 0.5rem;" data-en="Average Score" data-es="Nota Media">Average Score</span>
+                        <span class="kpi-value" id="db-avg-score" style="font-size: 1.85rem; font-weight: 800; color: var(--accent-color);">0</span>
+                    </div>
+                    <div class="kpi-card glass-card" style="background: rgba(255,255,255,0.02); padding: 1.25rem; text-align: center;">
+                        <span class="kpi-label" style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); margin-bottom: 0.5rem;" data-en="Total Audited" data-es="Total Analizadas">Total Audited</span>
+                        <span class="kpi-value" id="db-total-bets" style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary);">0</span>
+                    </div>
+                    <div class="kpi-card glass-card" style="background: rgba(255,255,255,0.02); padding: 1.25rem; text-align: center;">
+                        <span class="kpi-label" style="display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); margin-bottom: 0.5rem;" data-en="Top Recurring Bias" data-es="Sesgo Más Recurrente">Top Recurring Bias</span>
+                        <span class="kpi-value" id="db-top-bias" style="font-size: 1.1rem; font-weight: 700; color: #ef4444; display: flex; align-items: center; justify-content: center; height: 35px; line-height: 1.2;">None</span>
+                    </div>
+                </div>
+
+                <!-- Graph and Analysis -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                    <!-- Evolution Graph -->
+                    <div class="glass-card" style="padding: 16px; min-height: 220px; display: flex; flex-direction: column; background: rgba(255,255,255,0.01);">
+                        <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; margin-top: 0;" data-en="Score Evolution" data-es="Evolución de Nota">Score Evolution</h4>
+                        <div id="chart-container" style="flex-grow: 1; position: relative; width: 100%; height: 150px; display: flex; align-items: center; justify-content: center;">
+                            <!-- SVG chart injected dynamically -->
+                        </div>
+                    </div>
+                    <!-- Personalized History Tips -->
+                    <div class="glass-card" style="padding: 16px; display: flex; flex-direction: column; background: rgba(255,255,255,0.01);">
+                        <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; margin-top: 0;" data-en="AI Behavioral Insights" data-es="Análisis de Conducta IA">AI Behavioral Insights</h4>
+                        <div id="history-insight-msg" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); flex-grow: 1; display: flex; align-items: center;">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History List -->
+                <div>
+                    <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px;" data-en="Audit History" data-es="Historial de Auditorías">Audit History</h4>
+                    <div id="history-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 4px;">
+                        <!-- Injected dynamically -->
+                    </div>
+                </div>
+            </section>
         </main>
 
         <!-- ══ BOTTOM AD BANNER ═════════════════════════════════════════════ -->

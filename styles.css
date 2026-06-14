@@ -881,3 +881,96 @@ body {
         padding: 1.5rem;
     }
 }
+
+/* History Dashboard Styles */
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    transition: var(--transition);
+}
+.history-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.history-item-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.history-item-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.history-item-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.history-item-score {
+    font-weight: 700;
+    font-size: 1rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.02);
+}
+.chart-axis-line {
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 1;
+}
+.chart-grid-line {
+    stroke: rgba(255, 255, 255, 0.04);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+}
+.chart-line {
+    stroke: var(--accent-color);
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.chart-area {
+    fill: url(#chart-gradient);
+    opacity: 0.15;
+}
+.chart-dot {
+    fill: var(--accent-color);
+    stroke: var(--bg-color);
+    stroke-width: 2;
+    cursor: pointer;
+    transition: r 0.2s ease;
+}
+.chart-dot:hover {
+    r: 6;
+}
+.history-insight-banner {
+    padding: 12px;
+    border-radius: var(--radius-md);
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+.history-insight-banner-green {
+    padding: 12px;
+    border-radius: var(--radius-md);
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    color: #a7f3d0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+

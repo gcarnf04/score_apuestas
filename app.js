@@ -23,6 +23,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const greenFlagsList = document.getElementById('green-flags-list');
     const resetBtn = document.getElementById('reset-btn');
 
+    // Dashboard DOM selectors
+    const dashboardPanel = document.getElementById('dashboard-panel');
+    const dbAvgScore = document.getElementById('db-avg-score');
+    const dbTotalBets = document.getElementById('db-total-bets');
+    const dbTopBias = document.getElementById('db-top-bias');
+    const chartContainer = document.getElementById('chart-container');
+    const historyInsightMsg = document.getElementById('history-insight-msg');
+    const historyList = document.getElementById('history-list');
+    const btnDeleteHistory = document.getElementById('btnDeleteHistory');
+
     // Vault DOM elements
     const btnOpenSetup = document.getElementById('btnOpenSetup');
     const keyStatusDot = document.getElementById('keyStatusDot');
@@ -96,7 +106,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('langchange', () => {
         updateVaultStatusUI();
+        updateDashboard();
     });
+
+    // Initialize Dashboard
+    updateDashboard();
+
+    // Delete history handler
+    if (btnDeleteHistory) {
+        btnDeleteHistory.addEventListener('click', () => {
+            const lang = Lang.get();
+            if (confirm(lang === 'es' ? '¿Estás seguro de que quieres borrar todo el historial? Esto restablecerá los KPIs y gráficas.' : 'Are you sure you want to clear your entire audit history? This resets KPIs and charts.')) {
+                localStorage.removeItem('betting_audit_history');
+                updateDashboard();
+            }
+        });
+    }
 
     // Auto-focus move for PIN input fields
     function setupPinAutofocus(inputs) {
@@ -380,6 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
+            saveToHistory(data);
             renderResults(data);
 
         } catch (backendError) {
@@ -388,6 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If local server fails, execute the analysis 100% serverless in the browser
                 const slipData = await callGeminiDirectly(file, apiKey);
                 const auditResult = auditBetClientSide(slipData);
+                saveToHistory(auditResult);
                 renderResults(auditResult);
             } catch (fallbackError) {
                 console.error("[Fallback Failed]", fallbackError);
@@ -685,6 +712,78 @@ Only return valid JSON matching the schema.`;
             });
         }
 
+        // --- NEW RULES (HISTORICAL & EXTENDED BIASES) ---
+        let history = [];
+        try {
+            history = JSON.parse(localStorage.getItem('betting_audit_history')) || [];
+        } catch (e) {}
+
+        // 11. Hot Hand Fallacy
+        if (history.length > 0) {
+            const lastBet = history[history.length - 1];
+            if (lastBet && lastBet.toxicity_score >= 80 && stake_euros !== null && lastBet.stake_euros !== null && stake_euros > lastBet.stake_euros * 1.5) {
+                red_flags.push({
+                    titulo: lang === 'es' ? "Falacia de la Mano Caliente" : "Hot Hand Fallacy",
+                    mensaje: lang === 'es' ? `Has incrementado tu stake de ${lastBet.stake_euros}€ a ${stake_euros}€ tras una apuesta con excelente nota. El éxito anterior no altera las matemáticas de esta selección.` : `You increased your stake from ${lastBet.stake_euros}€ to ${stake_euros}€ following a highly-rated audit. Past success does not alter the mathematical probabilities of this current slip.`
+                });
+            }
+        }
+
+        // 12. Chasing Losses / Revenge Betting
+        if (history.length > 0) {
+            const lastBet = history[history.length - 1];
+            if (lastBet && lastBet.toxicity_score < 50) {
+                const timeDiffHours = (Date.now() - new Date(lastBet.date).getTime()) / (1000 * 60 * 60);
+                if (timeDiffHours < 2) {
+                    red_flags.push({
+                        titulo: lang === 'es' ? "Apuesta de Venganza / Caza de Pérdidas" : "Chasing Losses / Revenge Betting",
+                        mensaje: lang === 'es' ? "Has enviado esta apuesta menos de 2 horas después de recibir una de alto riesgo. Indica conducta impulsiva para recuperar pérdidas." : "You submitted this bet less than 2 hours after a high-risk audit. This strongly signals impulsive behavior to recover losses."
+                    });
+                }
+            }
+        }
+
+        // 13. Odds Anchoring
+        const lowOddsCount = selecciones.filter(s => s.cuota < 1.25).length;
+        if (num_eventos > 2 && lowOddsCount >= 2) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Anclaje de Cuotas" : "Odds Anchoring Trap",
+                mensaje: lang === 'es' ? `Tienes ${lowOddsCount} selecciones con cuotas muy bajas (< 1.25). Agregar cuotas bajas a combinadas acumula el margen de comisión de la casa sin añadir valor proporcional.` : `You have ${lowOddsCount} selections with very low odds (< 1.25). Adding low odds to accumulators compounds the bookmaker's margin without adding proportional value.`
+            });
+        }
+
+        // 14. Low Odds Overestimation
+        if (num_eventos === 1 && cuota_total < 1.20 && stake_euros !== null && stake_euros > 20) {
+            red_flags.push({
+                titulo: lang === 'es' ? "Sobreestimación de Favoritos" : "Low Odds Overestimation",
+                mensaje: lang === 'es' ? `Arriesgar ${stake_euros}€ a cuota ${cuota_total.toFixed(2)} es insensato. Un fallo imprevisto requiere múltiples aciertos a esta cuota para recuperar la banca.` : `Risking ${stake_euros}€ on a ${cuota_total.toFixed(2)} odd is mathematical nonsense. A single upset requires multiple consecutive wins at these odds just to break even.`
+            });
+        }
+
+        // 11 (Green). EV Search
+        if (num_eventos === 1 && cuota_total >= 1.90 && cuota_total <= 2.50) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Foco en Valor Esperado (+EV)" : "EV Search Focus",
+                mensaje: lang === 'es' ? "Apuesta simple en rango ideal. Las cuotas entre 1.90 y 2.50 son ideales para buscar desajustes matemáticos en la casa." : "Single bet in the ideal odds range. Odds between 1.90 and 2.50 are perfect for finding bookmaker pricing errors."
+            });
+        }
+
+        // 12 (Green). Risk Diversification
+        if (num_eventos > 1 && num_eventos <= 3 && unique_competitions.size === num_eventos) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Riesgo Diversificado" : "Risk Diversification",
+                mensaje: lang === 'es' ? "Tienes pocas selecciones y todas de competiciones diferentes. Reduce la correlación negativa entre tus apuestas." : "You have a low number of selections across entirely different competitions. This mitigates negative cross-competition correlation."
+            });
+        }
+
+        // 13 (Green). Strict Bankroll Management
+        if (stake_euros !== null && stake_euros > 0 && stake_euros <= 15) {
+            green_flags.push({
+                titulo: lang === 'es' ? "Gestión de Banca Prudente" : "Strict Bankroll Control",
+                mensaje: lang === 'es' ? `Tu stake de ${stake_euros}€ representa un porcentaje bajo y seguro para evitar el riesgo de ruina súbita.` : `Your stake of ${stake_euros}€ represents a safe, conservative fraction of typical bankrolls, avoiding sudden ruin.`
+            });
+        }
+
         // Score computation
         let score = 50 + (green_flags.length * 10) - (red_flags.length * 15);
         score = Math.max(0, Math.min(100, score));
@@ -766,4 +865,215 @@ Only return valid JSON matching the schema.`;
         resultsPanel.classList.remove('hidden');
         resultsPanel.classList.add('fade-in');
     }
+
+    // ==========================================
+    // 6. HISTORY & DASHBOARD LOGIC
+    // ==========================================
+    function saveToHistory(data) {
+        let history = [];
+        try {
+            history = JSON.parse(localStorage.getItem('betting_audit_history')) || [];
+        } catch (e) {
+            history = [];
+        }
+        
+        const record = {
+            ...data,
+            id: Date.now(),
+            date: new Date().toISOString()
+        };
+        history.push(record);
+        localStorage.setItem('betting_audit_history', JSON.stringify(history));
+        updateDashboard();
+    }
+
+    function updateDashboard() {
+        const lang = Lang.get();
+        let history = [];
+        try {
+            history = JSON.parse(localStorage.getItem('betting_audit_history')) || [];
+        } catch (e) {
+            history = [];
+        }
+
+        if (!dashboardPanel) return;
+
+        if (history.length === 0) {
+            dbAvgScore.textContent = '0';
+            dbTotalBets.textContent = '0';
+            dbTopBias.textContent = lang === 'es' ? 'Ninguno' : 'None';
+            chartContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">${lang === 'es' ? 'Aún no hay datos disponibles' : 'No data available yet'}</div>`;
+            historyInsightMsg.innerHTML = `<p style="margin:0;">${lang === 'es' ? 'Analiza tu primer ticket de apuesta para ver las sugerencias de conducta de la IA.' : 'Analyze your first betting ticket to see AI behavior insights.'}</p>`;
+            historyList.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 12px;">${lang === 'es' ? 'No se encontró historial' : 'No history found'}</div>`;
+            return;
+        }
+
+        const total = history.length;
+        const sumScore = history.reduce((acc, curr) => acc + curr.toxicity_score, 0);
+        const avgScore = Math.round(sumScore / total);
+        dbAvgScore.textContent = avgScore;
+        dbTotalBets.textContent = total;
+
+        let scoreColor = '#ef4444';
+        if (avgScore >= 80) scoreColor = '#10b981';
+        else if (avgScore >= 50) scoreColor = '#f59e0b';
+        else if (avgScore >= 30) scoreColor = '#f97316';
+        dbAvgScore.style.color = scoreColor;
+
+        const biasCounts = {};
+        history.forEach(bet => {
+            if (bet.red_flags) {
+                bet.red_flags.forEach(flag => {
+                    const title = flag.titulo;
+                    biasCounts[title] = (biasCounts[title] || 0) + 1;
+                });
+            }
+        });
+        
+        let topBias = null;
+        let maxCount = 0;
+        for (const [bias, count] of Object.entries(biasCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                topBias = bias;
+            }
+        }
+
+        if (topBias) {
+            dbTopBias.textContent = `${topBias} (${maxCount})`;
+            dbTopBias.style.color = '#ef4444';
+        } else {
+            dbTopBias.textContent = lang === 'es' ? 'Ninguno' : 'None';
+            dbTopBias.style.color = 'var(--text-secondary)';
+        }
+
+        const chartData = history.slice(-10);
+        let svgHtml = '';
+        if (chartData.length > 1) {
+            const width = 300;
+            const height = 110;
+            const paddingLeft = 30;
+            const paddingRight = 15;
+            const paddingTop = 15;
+            const paddingBottom = 20;
+
+            const chartWidth = width - paddingLeft - paddingRight;
+            const chartHeight = height - paddingTop - paddingBottom;
+
+            const points = chartData.map((bet, i) => {
+                const x = paddingLeft + (i / (chartData.length - 1)) * chartWidth;
+                const y = paddingTop + ((100 - bet.toxicity_score) / 100) * chartHeight;
+                return { x, y, score: bet.toxicity_score };
+            });
+
+            const lineD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+            const areaD = `${lineD} L ${points[points.length - 1].x} ${height - paddingBottom} L ${points[0].x} ${height - paddingBottom} Z`;
+
+            let gridlines = '';
+            [0, 50, 100].forEach(val => {
+                const y = paddingTop + ((100 - val) / 100) * chartHeight;
+                gridlines += `
+                    <line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" class="chart-grid-line" />
+                    <text x="${paddingLeft - 8}" y="${y + 4}" fill="var(--text-muted)" font-size="9" text-anchor="end">${val}</text>
+                `;
+            });
+
+            const yZero = paddingTop + chartHeight;
+            gridlines += `<line x1="${paddingLeft}" y1="${yZero}" x2="${width - paddingRight}" y2="${yZero}" class="chart-axis-line" />`;
+
+            let dots = '';
+            points.forEach(p => {
+                dots += `<circle cx="${p.x}" cy="${p.y}" r="4" class="chart-dot"><title>${lang === 'es' ? 'Nota' : 'Score'}: ${p.score}</title></circle>`;
+            });
+
+            svgHtml = `
+                <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" style="overflow: visible;">
+                    <defs>
+                        <linearGradient id="chart-gradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="var(--accent-color)" stop-opacity="0.3"></stop>
+                            <stop offset="100%" stop-color="var(--accent-color)" stop-opacity="0.0"></stop>
+                        </linearGradient>
+                    </defs>
+                    ${gridlines}
+                    <path d="${areaD}" class="chart-area" />
+                    <path d="${lineD}" class="chart-line" />
+                    ${dots}
+                </svg>
+            `;
+        } else {
+            svgHtml = `<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center;">${lang === 'es' ? 'Se necesitan al menos 2 análisis para trazar evolución' : 'Need at least 2 entries to plot evolution'}</div>`;
+        }
+        chartContainer.innerHTML = svgHtml;
+
+        let insightMsg = '';
+        if (avgScore >= 75) {
+            insightMsg = lang === 'es' 
+                ? `<div class="history-insight-banner-green"><strong>✅ Patrón de Banca Excelente:</strong> Tu rendimiento histórico es altamente profesional. Mantienes un promedio de riesgo bajo. Sigue aplicando gestión estricta y evita sobreexponerte.</div>`
+                : `<div class="history-insight-banner-green"><strong>✅ Excellent Bankroll Pattern:</strong> Your historical performance is highly professional. You maintain a low-risk average. Keep practicing disciplined management.</div>`;
+        } else {
+            if (topBias) {
+                insightMsg = lang === 'es'
+                    ? `<div class="history-insight-banner"><strong>🚨 Corrección de Sesgo Urgente:</strong> Tu debilidad recurrente es <strong>"${topBias}"</strong>, detectada ${maxCount} veces. Prioriza mitigar este sesgo en tus próximas selecciones para detener la pérdida de bankroll.</div>`
+                    : `<div class="history-insight-banner"><strong>🚨 Urgent Bias Correction:</strong> Your top weakness is <strong>"${topBias}"</strong>, detected ${maxCount} times. Prioritize resolving this bias in your upcoming slips to protect your bankroll.</div>`;
+            } else {
+                insightMsg = lang === 'es'
+                    ? `<div class="history-insight-banner"><strong>⚠️ Alerta de Rendimiento:</strong> Tu promedio actual de ${avgScore} indica una exposición de riesgo alta a largo plazo. Te recomendamos priorizar apuestas simples.</div>`
+                    : `<div class="history-insight-banner"><strong>⚠️ Performance Warning:</strong> Your current average of ${avgScore} indicates high long-term risk. We recommend sticking to single bets.</div>`;
+            }
+        }
+        historyInsightMsg.innerHTML = insightMsg;
+
+        historyList.innerHTML = '';
+        const reversedHistory = [...history].reverse();
+        reversedHistory.forEach((item, index) => {
+            const dateStr = new Date(item.date).toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'history-item';
+            
+            let itemScoreColor = '#ef4444';
+            if (item.toxicity_score >= 80) itemScoreColor = '#10b981';
+            else if (item.toxicity_score >= 50) itemScoreColor = '#f59e0b';
+            else if (item.toxicity_score >= 30) itemScoreColor = '#f97316';
+
+            const originalIndex = history.length - 1 - index;
+
+            itemDiv.innerHTML = `
+                <div class="history-item-left">
+                    <div style="font-weight:600; color:var(--text-primary);">
+                        ${lang === 'es' ? 'Cuota' : 'Odds'}: ${item.cuota_total.toFixed(2)} (${item.num_eventos} ${lang === 'es' ? 'eventos' : 'events'})
+                    </div>
+                    <div class="history-item-meta">${dateStr}</div>
+                </div>
+                <div class="history-item-right">
+                    <div class="history-item-score" style="color:${itemScoreColor}; border-color:${itemScoreColor}33;">${item.toxicity_score}</div>
+                    <button class="btn btn-ghost btn-sm btn-load-history" data-index="${originalIndex}" style="padding: 2px 6px; font-size:11px;">${lang === 'es' ? 'Detalles' : 'Details'}</button>
+                    <button class="btn-icon btn-delete-history-item" data-index="${originalIndex}" style="color:var(--red-flag-color); font-size:16px; background:none; border:none; cursor:pointer;" title="Delete">✕</button>
+                </div>
+            `;
+            historyList.appendChild(itemDiv);
+        });
+
+        historyList.querySelectorAll('.btn-load-history').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.target.getAttribute('data-index'));
+                renderResults(history[idx]);
+                resultsPanel.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        historyList.querySelectorAll('.btn-delete-history-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+                if (confirm(lang === 'es' ? '¿Eliminar este análisis del historial?' : 'Delete this audit from history?')) {
+                    history.splice(idx, 1);
+                    localStorage.setItem('betting_audit_history', JSON.stringify(history));
+                    updateDashboard();
+                }
+            });
+        });
+    }
 });
+
+

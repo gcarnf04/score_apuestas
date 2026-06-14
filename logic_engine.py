@@ -237,6 +237,44 @@ class BetAuditor:
                 "mensaje": "Using wide positive handicaps protects your bet even if your team loses the match by a tight margin."
             })
 
+        # --- NEW RULES (STATIC BIASES) ---
+        
+        # 11. Odds Anchoring Trap
+        low_odds_count = sum(1 for s in selecciones if s.cuota < 1.25)
+        if num_eventos > 2 and low_odds_count >= 2:
+            red_flags.append({
+                "titulo": "Odds Anchoring Trap",
+                "mensaje": f"You have {low_odds_count} selections with very low odds (< 1.25). Adding low odds to accumulators compounds the bookmaker's margin without adding proportional value."
+            })
+
+        # 12. Low Odds Overestimation
+        if num_eventos == 1 and cuota_total < 1.20 and stake_euros is not None and stake_euros > 20:
+            red_flags.append({
+                "titulo": "Low Odds Overestimation",
+                "mensaje": f"Risking {stake_euros}€ on a {cuota_total:.2f} odd is mathematical nonsense. A single upset requires multiple consecutive wins at these odds just to break even."
+            })
+
+        # 11 (Green). EV Search Focus
+        if num_eventos == 1 and 1.90 <= cuota_total <= 2.50:
+            green_flags.append({
+                "titulo": "EV Search Focus",
+                "mensaje": "Single bet in the ideal odds range. Odds between 1.90 and 2.50 are perfect for finding bookmaker pricing errors."
+            })
+
+        # 12 (Green). Risk Diversification
+        if num_eventos > 1 and num_eventos <= 3 and len(unique_competitions) == num_eventos:
+            green_flags.append({
+                "titulo": "Risk Diversification",
+                "mensaje": "You have a low number of selections across entirely different competitions. This mitigates negative cross-competition correlation."
+            })
+
+        # 13 (Green). Strict Bankroll Control
+        if stake_euros is not None and 0 < stake_euros <= 15:
+            green_flags.append({
+                "titulo": "Strict Bankroll Control",
+                "mensaje": f"Your stake of {stake_euros}€ represents a safe, conservative fraction of typical bankrolls, avoiding sudden ruin."
+            })
+
         # 4. Cálculo del "Toxicity Score"
         # Partiendo de 50, suma 10 puntos por cada Green Flag y resta 15 por cada Red Flag (limitado entre 0 y 100).
         score = 50 + (len(green_flags) * 10) - (len(red_flags) * 15)
